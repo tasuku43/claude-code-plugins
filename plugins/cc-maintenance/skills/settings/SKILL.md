@@ -1,9 +1,8 @@
 ---
-name: settings
 description: >
   Audit permissions, hooks, and plugins in settings.json and propose improvements.
   Triggers: "audit settings", "check permissions", "review hooks", "audit plugins".
-  Do NOT use for: CLAUDE.md / skill content (use cc-maintenance:skills), context efficiency (use cc-maintenance:context).
+  Do NOT use for: CLAUDE.md / skill content (use cc-maintenance:config-placement), context efficiency (use cc-maintenance:context-cost).
 ---
 
 # CC Audit: Settings
@@ -21,8 +20,8 @@ Audit permissions, hooks, and plugins in settings.json and propose improvements.
 
 | Out of scope | Use instead |
 |--------------|-------------|
-| CLAUDE.md / skill content | `cc-maintenance:skills` |
-| Context efficiency / skill count cost analysis | `cc-maintenance:context` |
+| CLAUDE.md / rules / skill / command content | `cc-maintenance:config-placement` |
+| Context efficiency / skill count cost analysis | `cc-maintenance:context-cost` |
 
 ## Process
 
@@ -43,7 +42,7 @@ Read the following in order:
 
 **Project path decoding:**
 Directory names under `~/.claude/projects/` are encoded paths.
-`-Users-tasuku43-work-root` → `/Users/tasuku43/work/root` (leading `-` becomes `/`, remaining `-` become `/`).
+`-Users-alice-projects-myapp` → `/Users/alice/projects/myapp` (leading `-` becomes `/`, remaining `-` become `/`).
 Append `.claude/settings.local.json` to the decoded path.
 
 ### Step 2: Analysis
@@ -68,7 +67,7 @@ Analyze from the following perspectives:
 - All disabled plugins
 - Plugins enabled at the project level
 - Estimated usage frequency for each plugin (daily use vs. infrequent)
-- **Note**: Skill count cost analysis belongs to `cc-maintenance:context`. Focus on enable/disable decisions here
+- **Note**: Skill count cost analysis belongs to `cc-maintenance:context-cost`. Focus on enable/disable decisions here
 
 ### Step 3: Improvement Proposals
 

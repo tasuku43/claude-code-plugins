@@ -1,28 +1,28 @@
 ---
-name: skills
 description: >
-  Audit CLAUDE.md, skills, and command definitions for responsibility alignment and propose reorganization.
-  Triggers: "audit skills", "audit commands", "review CLAUDE.md", "responsibility audit".
-  Do NOT use for: settings.json / permissions / hooks (use cc-maintenance:settings), context efficiency (use cc-maintenance:context).
+  Audit CLAUDE.md, rules, skills, and command definitions for responsibility alignment and propose reorganization.
+  Triggers: "audit config placement", "audit skills", "audit commands", "review CLAUDE.md", "review rules", "responsibility audit".
+  Do NOT use for: settings.json / permissions / hooks (use cc-maintenance:settings), context efficiency (use cc-maintenance:context-cost).
 ---
 
-# CC Audit: Skills
+# CC Maintenance: Config Placement
 
-Audit CLAUDE.md, skills, and command definitions for responsibility alignment.
+Audit CLAUDE.md, rules, skills, and command definitions for responsibility alignment.
 
 ## Scope
 
 | In scope | Includes |
 |----------|----------|
 | CLAUDE.md | Global + project-level content, validity of responsibility placement |
+| Rules | All rule files under ~/.claude/rules/ + project .claude/rules/ |
 | Skills | All skills under ~/.claude/skills/ + project .claude/skills/ |
 | Commands | All commands under ~/.claude/commands/ + project .claude/commands/ |
-| Responsibility separation | Deciding "where should this live?" (CLAUDE.md / settings / hook / skill / command) |
+| Responsibility separation | Deciding "where should this live?" (CLAUDE.md / rules / settings / hook / skill / command) |
 
 | Out of scope | Use instead |
 |--------------|-------------|
 | settings.json / permissions / hooks / plugins | `cc-maintenance:settings` |
-| Context efficiency | `cc-maintenance:context` |
+| Context efficiency | `cc-maintenance:context-cost` |
 
 ## Process
 
@@ -41,30 +41,35 @@ Read the following in order:
 2. CLAUDE.md from the 5 most recently used projects
 3. External files referenced from CLAUDE.md
 
+#### Rules
+4. All rule files under `~/.claude/rules/`
+5. All rule files under `.claude/rules/` of the above 5 projects
+
 #### Skills
-4. All SKILL.md files under `~/.claude/skills/`
-5. All SKILL.md files under `.claude/skills/` of the above 5 projects
+6. All SKILL.md files under `~/.claude/skills/`
+7. All SKILL.md files under `.claude/skills/` of the above 5 projects
 
 #### Commands
-6. All `.md` files under `~/.claude/commands/` (**exclude `cc-maintenance-*.md` from analysis**)
-7. All `.md` files under `.claude/commands/` of the above 5 projects
+8. All `.md` files under `~/.claude/commands/`
+9. All `.md` files under `.claude/commands/` of the above 5 projects
 
 **Project path decoding:**
 Directory names under `~/.claude/projects/` are encoded paths.
-`-Users-tasuku43-work-root` → `/Users/tasuku43/work/root` (leading `-` becomes `/`, remaining `-` become `/`).
-Append CLAUDE.md, `.claude/skills/`, `.claude/commands/` to the decoded path.
+`-Users-alice-projects-myapp` → `/Users/alice/projects/myapp` (leading `-` becomes `/`, remaining `-` become `/`).
+Append CLAUDE.md, `.claude/rules/`, `.claude/skills/`, `.claude/commands/` to the decoded path.
 
 ### Step 2: Analysis
 
 Analyze from the following perspectives:
 
-#### CLAUDE.md
+#### CLAUDE.md & Rules
 - Rules placed globally that are project-specific
 - Rules placed in projects that should be global
-- Rules that should be enforced by hooks but only exist in CLAUDE.md
+- Rules that should be enforced by hooks but only exist in CLAUDE.md or rules files
 - Stale rules (potentially diverged from actual behavior)
-- Duplicates (same rule in both global and project CLAUDE.md)
-- **Quantitative**: rule count for global, rule count per project
+- Duplicates (same rule in both global and project CLAUDE.md, or between CLAUDE.md and rules files)
+- Whether a rule belongs in CLAUDE.md (inline) or .claude/rules/ (separate file)
+- **Quantitative**: rule count for global, rule count per project, rules file count
 
 #### Skills / Commands
 - Name, description, triggers, and primary function of each skill/command
@@ -77,8 +82,10 @@ Analyze from the following perspectives:
 - **Quantitative**: skill count, command count, breakdown by project
 
 #### Responsibility Placement
-- Items in CLAUDE.md that should be skills (long procedures, judgment-heavy)
-- Items in skills that CLAUDE.md alone would suffice (simple rules)
+- Items in CLAUDE.md that should be rules files, skills, or hooks
+- Items in rules files that belong in CLAUDE.md (short, inline-appropriate)
+- Items in CLAUDE.md or rules that should be skills (long procedures, judgment-heavy)
+- Items in skills that CLAUDE.md or rules alone would suffice (simple rules)
 - Items that should be hooks (deterministic validation)
 - Skills that should be commands (low frequency, explicit invocation)
 - Commands that should be skills (if usage has become frequent)
@@ -90,6 +97,7 @@ Present proposals in the following structure:
 ```markdown
 ## Current State Summary
 - CLAUDE.md: global N rules / per project [project: N rules, ...]
+- Rules files: global N / per project [project: N, ...]
 - Skills: global N / per project [project: N, ...]
 - Commands: global N / per project [project: N, ...]
 
@@ -130,7 +138,8 @@ Implement items approved by the user.
 
 | Location | Best for | Not for |
 |----------|----------|---------|
-| CLAUDE.md | Persistent rules, policies, constraints | Long procedures, judgment-heavy processes |
+| CLAUDE.md | Short persistent rules, policies, constraints | Long procedures, rules that benefit from separate files |
+| Rules (.claude/rules/) | Rules that are long, conditional, or benefit from file-level organization | Short one-liners better kept inline in CLAUDE.md |
 | settings.json | Permissions, display, execution mode | Rules or procedures |
 | Hook | Deterministic validation / guards | Decisions requiring ambiguity resolution |
 | Skill | High-frequency, auto-triggered reusable procedures | Low-frequency explicit invocations |

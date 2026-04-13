@@ -13,7 +13,7 @@ Audits `settings.json` — permissions, hooks, and plugins — and proposes impr
 - Inventories enabled/disabled plugins with usage frequency estimates
 - Detects overlap between global and project-specific settings
 
-### cc-maintenance:context
+### cc-maintenance:context-cost
 
 Analyzes context efficiency — system prompt size, investigation noise, and large outputs consuming context window.
 
@@ -22,13 +22,13 @@ Analyzes context efficiency — system prompt size, investigation noise, and lar
 - Samples session logs to find context pressure patterns (via subagent)
 - Proposes reduction actions ranked by ROI
 
-### cc-maintenance:skills
+### cc-maintenance:config-placement
 
-Audits CLAUDE.md, skills, and command definitions for responsibility alignment.
+Audits CLAUDE.md, rules, skills, and command definitions for responsibility alignment.
 
-- Reviews rule placement across CLAUDE.md, settings, hooks, skills, and commands
+- Reviews rule placement across CLAUDE.md, rules files, settings, hooks, skills, and commands
 - Identifies duplicates, conflicts, and stale definitions
-- Recommends type changes (skill vs. command) based on usage patterns
+- Recommends type changes (skill vs. command) and CLAUDE.md vs. rules file placement
 - Proposes responsibility reassignment with rationale
 
 ## Output Language

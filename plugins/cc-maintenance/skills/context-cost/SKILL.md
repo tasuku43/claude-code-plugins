@@ -1,9 +1,8 @@
 ---
-name: context
 description: >
   Analyze context efficiency — system prompt bloat, investigation noise, and large outputs consuming context.
   Triggers: "audit context", "context cost", "system prompt size", "context efficiency".
-  Do NOT use for: permissions / hooks (use cc-maintenance:settings), CLAUDE.md / skill definitions (use cc-maintenance:skills).
+  Do NOT use for: permissions / hooks (use cc-maintenance:settings), CLAUDE.md / rules / skill definitions (use cc-maintenance:config-placement).
 ---
 
 # CC Audit: Context
@@ -22,7 +21,7 @@ Analyze context efficiency and identify system prompt bloat, investigation noise
 | Out of scope | Use instead |
 |--------------|-------------|
 | Permissions / hooks validity | `cc-maintenance:settings` |
-| CLAUDE.md / skill responsibility alignment | `cc-maintenance:skills` |
+| CLAUDE.md / rules / skill responsibility alignment | `cc-maintenance:config-placement` |
 
 ## Process
 
@@ -77,7 +76,7 @@ Identify patterns that consume excessive context from recent Claude Code session
 
 ## Project Path Decoding
 Directory names under ~/.claude/projects/ are encoded paths.
-Example: -Users-tasuku43-work-root → /Users/tasuku43/work/root
+Example: -Users-alice-projects-myapp → /Users/alice/projects/myapp
 Leading - becomes /, remaining - become /.
 
 ## Steps
