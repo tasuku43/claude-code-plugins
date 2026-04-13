@@ -28,6 +28,10 @@ Audit CLAUDE.md, skills, and command definitions for responsibility alignment.
 
 Execute entirely in the main context (1M context assumed). Do not use subagents.
 
+### Output Language
+
+Detect the user's primary language from CLAUDE.md, project files, and conversation history during Step 1. Produce all output (analysis, proposals, summaries) in that language. The skill definition itself is in English, but the output must match the user's language.
+
 ### Step 1: Inventory Collection
 
 Read the following in order:

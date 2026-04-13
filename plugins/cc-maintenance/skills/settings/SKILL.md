@@ -28,6 +28,10 @@ Audit permissions, hooks, and plugins in settings.json and propose improvements.
 
 Execute entirely in the main context (1M context assumed). Do not use subagents.
 
+### Output Language
+
+Detect the user's primary language from CLAUDE.md, project files, and conversation history during Step 1. Produce all output (analysis, proposals, summaries) in that language. The skill definition itself is in English, but the output must match the user's language.
+
 ### Step 1: Gather Current State
 
 Read the following in order:
