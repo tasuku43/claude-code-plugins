@@ -1,0 +1,13 @@
+{
+  "name": "claude-code-plugins",
+  "owner": {
+    "name": "tasuku43"
+  },
+  "plugins": [
+    {
+      "name": "cc-maintenance",
+      "source": "./plugins/cc-maintenance",
+      "description": "Maintain and optimize Claude Code settings, context efficiency, and skill/command definitions"
+    }
+  ]
+}

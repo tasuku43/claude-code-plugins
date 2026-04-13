@@ -1,0 +1,8 @@
+{
+  "name": "cc-maintenance",
+  "description": "Maintain and optimize Claude Code settings, context efficiency, and skill/command definitions",
+  "author": {
+    "name": "tasuku43"
+  },
+  "keywords": ["maintenance", "audit", "settings", "context", "skills", "optimization"]
+}
