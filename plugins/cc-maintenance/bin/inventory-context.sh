@@ -34,6 +34,61 @@ mtime_epoch() {
   stat -f '%m' "$1" 2>/dev/null || stat -c '%Y' "$1" 2>/dev/null || echo 0
 }
 
+# Extract the description field's byte length from a SKILL.md frontmatter.
+# The always-injected cost per skill is dominated by its description, so this is
+# the best cheap proxy. Multi-line YAML descriptions are rolled up.
+skill_description_bytes() {
+  local f="$1"
+  [[ -f "$f" ]] || { echo 0; return; }
+  awk '
+    BEGIN { fm=0; in_desc=0; total=0 }
+    /^---[[:space:]]*$/ { fm++; if (fm==2) exit; next }
+    fm==1 {
+      if (in_desc) {
+        # continuation of a multi-line description (indented line)
+        if ($0 ~ /^[[:space:]]/) { total += length($0) + 1; next }
+        in_desc = 0
+      }
+      if ($0 ~ /^description:[[:space:]]*/) {
+        sub(/^description:[[:space:]]*/, "")
+        total += length($0)
+        in_desc = 1
+      }
+    }
+    END { print total }
+  ' "$f"
+}
+
+# Summarize a skills directory: total SKILL.md count, total description bytes,
+# and the top-5 largest descriptions by byte size.
+summarize_skills_dir() {
+  local dir="$1"
+  if [[ ! -d "$dir" ]]; then
+    echo '{"count":0,"description_bytes_total":0,"top":[]}'
+    return
+  fi
+  local tmp
+  tmp=$(find "$dir" -type f -name SKILL.md 2>/dev/null | while read -r f; do
+    local b
+    b=$(skill_description_bytes "$f")
+    printf '%s|%s\n' "${b:-0}" "$f"
+  done)
+  if [[ -z "$tmp" ]]; then
+    echo '{"count":0,"description_bytes_total":0,"top":[]}'
+    return
+  fi
+  local count total top
+  count=$(printf '%s\n' "$tmp" | wc -l | tr -d ' ')
+  total=$(printf '%s\n' "$tmp" | awk -F'|' '{s+=$1} END{print s+0}')
+  top=$(printf '%s\n' "$tmp" | sort -t'|' -k1 -nr | head -n 5 | while IFS='|' read -r b p; do
+    [[ -z "$p" ]] && continue
+    jq -n --arg path "$p" --argjson bytes "${b:-0}" '{path: $path, description_bytes: $bytes}'
+  done | jq -s '.')
+  jq -n \
+    --argjson c "${count:-0}" --argjson t "${total:-0}" --argjson top "$top" \
+    '{count: $c, description_bytes_total: $t, top: $top}'
+}
+
 settings=$(read_settings)
 
 # --- Enabled plugin inventory ---
@@ -58,23 +113,23 @@ if [[ -n "$enabled_plugins_list" && -d "$plugins_cache" ]]; then
         fi
       done <<<"$plugin_manifests"
       if [[ -z "$plugin_root" ]]; then
-        jq -n --arg n "$raw_name" '{name: $n, found: false, skills: 0, commands: 0, agents: 0}'
+        jq -n --arg n "$raw_name" '{name: $n, found: false, skills: {count: 0, description_bytes_total: 0, top: []}, commands: 0, agents: 0}'
         continue
       fi
-      sc=$(count_files "$plugin_root/skills" "SKILL.md")
+      sk=$(summarize_skills_dir "$plugin_root/skills")
       cc=$(count_files "$plugin_root/commands" "*.md")
       ac=$(count_files "$plugin_root/agents" "*.md")
       jq -n \
         --arg name "$raw_name" --arg path "$plugin_root" \
-        --argjson sc "$sc" --argjson cc "$cc" --argjson ac "$ac" \
-        '{name: $name, path: $path, found: true, skills: $sc, commands: $cc, agents: $ac}'
+        --argjson sk "$sk" --argjson cc "$cc" --argjson ac "$ac" \
+        '{name: $name, path: $path, found: true, skills: $sk, commands: $cc, agents: $ac}'
     done <<<"$enabled_plugins_list" | jq -s '.'
   )
 fi
 
 # --- Custom (non-plugin) assets ---
 custom=$(jq -n \
-  --argjson gs "$(count_files "$CLAUDE_HOME/skills" SKILL.md)" \
+  --argjson gs "$(summarize_skills_dir "$CLAUDE_HOME/skills")" \
   --argjson gc "$(count_files "$CLAUDE_HOME/commands" '*.md')" \
   --argjson ga "$(count_files "$CLAUDE_HOME/agents" '*.md')" \
   '{
