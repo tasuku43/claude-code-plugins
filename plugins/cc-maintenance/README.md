@@ -1,36 +1,59 @@
 # cc-maintenance
 
-Maintain and optimize your Claude Code environment. Audits your setup, identifies inefficiencies, and proposes actionable improvements.
+Audit and re-design your Claude Code environment. Three commands plus one subagent, each with a narrow responsibility and a metadata-first fetch strategy so audits stay cheap.
 
-## Skills
+## Commands
 
-### cc-maintenance:settings
+These are commands (not skills) because auditing always happens with explicit user intent — there is no value in auto-triggering.
 
-Audits `settings.json` — permissions, hooks, and plugins — and proposes improvements.
+| Command | Responsibility |
+|---|---|
+| `/audit-settings` | `settings.json` / `settings.local.json`, permissions, hook implementation validity, plugin enable/disable. |
+| `/audit-config-placement` | CLAUDE.md / rules / skills / commands / agents responsibility alignment. Type-change proposals (skill ⇄ command, rule → hook, skill → agent). Skill-definition quality lint. |
+| `/audit-context-cost` | Always-injected system prompt size, investigation noise in session logs, large outputs, subagent delegation design. |
 
-- Reviews allow / deny / ask permission entries for duplicates, gaps, and stale rules
-- Verifies hook scripts and identifies missing hooks
-- Inventories enabled/disabled plugins with usage frequency estimates
-- Detects overlap between global and project-specific settings
+Hook-placement candidates (rules that should become hooks) belong to `/audit-config-placement`. `/audit-settings` only validates existing hook implementations.
 
-### cc-maintenance:context-cost
+## Agent
 
-Analyzes context efficiency — system prompt size, investigation noise, and large outputs consuming context window.
+- `cc-maintenance:context-log-analyzer` — samples recent session `.jsonl` logs for context-pressure patterns. Dispatched by `/audit-context-cost`. Keeps raw log bodies inside its isolated context; only a summary returns to the caller.
 
-- Counts skills injected by each enabled plugin
-- Measures MCP tool and server instruction overhead
-- Samples session logs to find context pressure patterns (via subagent)
-- Proposes reduction actions ranked by ROI
+## Fetch Strategy
 
-### cc-maintenance:config-placement
+Each command follows a three-phase fetch pattern to avoid over-reading:
 
-Audits CLAUDE.md, rules, skills, and command definitions for responsibility alignment.
+- **Phase A (always)** — one call to a shell script under `bin/`. Returns structured JSON: file paths, counts, sizes, frontmatter fields, heading lists. No file bodies.
+- **Phase B (on signals)** — read specific file bodies only when Phase A flags an issue (size anomaly, overlap, vague description, etc.).
+- **Phase C (rare)** — deep dive or subagent dispatch only when Phase B cannot clarify.
 
-- Reviews rule placement across CLAUDE.md, rules files, settings, hooks, skills, and commands
-- Identifies duplicates, conflicts, and stale definitions
-- Recommends type changes (skill vs. command) and CLAUDE.md vs. rules file placement
-- Proposes responsibility reassignment with rationale
+Each command reports what it intentionally skipped, so you can see the cost/coverage trade-off.
+
+## Repository Layout
+
+```
+cc-maintenance/
+  .claude-plugin/plugin.json
+  README.md
+  bin/
+    inventory-settings.sh      # Phase A for /audit-settings
+    inventory-config.sh        # Phase A for /audit-config-placement
+    inventory-context.sh       # Phase A for /audit-context-cost
+  agents/
+    context-log-analyzer.md    # Subagent for heavy log sampling
+  commands/
+    audit-settings.md
+    audit-config-placement.md
+    audit-context-cost.md
+```
+
+The `bin/` scripts emit JSON to stdout. Commands reference them via `${CLAUDE_PLUGIN_ROOT}/bin/<name>.sh`.
+
+## Requirements
+
+- `jq` — required by all three inventory scripts. `brew install jq` on macOS.
+- macOS or Linux — scripts use `stat -f` (BSD) with `stat -c` (GNU) fallback.
+- Bash 3.2+.
 
 ## Output Language
 
-Each skill automatically detects the user's primary language from CLAUDE.md and project files, and produces output in that language.
+Each command detects the user's primary language from `~/.claude/CLAUDE.md` or conversation history and produces output in that language. Command definitions themselves are written in English.

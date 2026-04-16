@@ -1,0 +1,114 @@
+---
+description: Audit context-window efficiency — always-injected system prompt size, investigation noise, and large outputs — and propose ROI-ranked reductions.
+---
+
+# audit-context-cost
+
+Audit what is burning context window. Produces an ROI-ranked list of reductions.
+
+## Boundaries
+
+- **In scope**: always-injected system prompt size (plugin skills, custom skills, MCP server instructions, SessionStart output), investigation noise in session logs, large verbatim outputs, subagent delegation design.
+- **Out of scope**: permissions / hook validity → `/audit-settings`. CLAUDE.md / skill placement or definition quality → `/audit-config-placement`.
+
+## Fetch Strategy
+
+Start with metadata only. Do NOT read log bodies, skill bodies, or MCP server bodies in the main context. Report what you skip.
+
+### Phase A — inventory (always, single call)
+
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/bin/inventory-context.sh
+```
+
+Returns JSON:
+
+- `enabled_plugins`: `[{name, path, found, skills, commands, agents}]`
+- `custom`: `{skills_global, commands_global, agents_global}`
+- `mcp`: `{servers: [...], count}`
+- `session_start_hooks`: list of SessionStart command strings
+- `recent_log_metadata`: 5 recent projects, each with top-3 `.jsonl` by size (`{path, size_bytes, mtime_epoch}`)
+
+### Phase B — targeted reads (only on Phase A signals)
+
+| Signal | Then do |
+|---|---|
+| Any enabled plugin with `found == false` | Investigate — it is enabled but not installed |
+| A plugin contributes a large skill count that the user rarely uses (judge from conversation context) | Read that plugin's `plugin.json` / one or two SKILL.md frontmatters to sanity-check |
+| SessionStart hook output is unknown | Run the command(s) once and measure output size |
+| MCP `count > 0` | Inspect `settings.json` `mcpServers` entry for server-instruction size |
+
+### Phase C — delegate heavy log analysis
+
+Only when you need concrete context-pressure evidence. Dispatch the log-analyzer agent; do not load log bodies into this context.
+
+```
+Agent({
+  description: "Sample recent session logs for context-pressure patterns",
+  subagent_type: "cc-maintenance:context-log-analyzer",
+  prompt: "<pass the recent_log_metadata array from Phase A verbatim; state which patterns you care about>"
+})
+```
+
+Use the agent's summary in the final report. Do not re-read the logs here.
+
+## Output Language
+
+Detect from `~/.claude/CLAUDE.md` or conversation history. Keep this file in English.
+
+## Cost Categorization
+
+Classify each always-injected element:
+
+| Element | Counts toward always-injected? |
+|---|---|
+| Plugin skills (each SKILL.md frontmatter) | yes |
+| Custom skills (under `~/.claude/skills/`) | yes |
+| Custom commands | no — commands expand only on invocation |
+| Plugin commands | no — same reason |
+| Agents | no — loaded only when dispatched |
+| MCP server instructions | yes |
+| MCP deferred tool names | yes (names only, schemas on demand) |
+| SessionStart hook output | yes |
+
+## Reduction Methods
+
+| Method | Best for | Savings |
+|---|---|---|
+| Disable plugin | Rarely-used plugin | Removes all of its injected skill frontmatters |
+| Project-scope plugin enable | Plugin useful only in specific projects | Removes injection everywhere else |
+| Skill → command conversion | Always-explicit invocation | Removes frontmatter injection; `/audit-config-placement` owns this change |
+| Inline → agent delegation | Heavy investigations | Keeps raw data out of main context |
+| CLI preprocessing | Large deterministic outputs | Orders-of-magnitude reduction |
+| Trim SessionStart hook output | Verbose startup hook | Per-session savings |
+
+## Output Format
+
+```markdown
+## Always-Injected Cost
+| element | count | notes |
+|---|---|---|
+| plugin: <name> | N skills | <frequency note> |
+| ... | ... | ... |
+| custom skills | N | |
+| MCP deferred tools | N | names only |
+| SessionStart output | <size or "unmeasured"> | |
+| **total always-injected** | N | |
+
+## Intentionally Skipped
+- <target or area> — <reason>
+
+## Context Pressure Patterns (from log-analyzer)
+### Already mitigated
+- <pattern> → <existing mitigation>
+### Unmitigated
+- <pattern> → <frequency> → <proposed mitigation> → <implementation type: skill / agent / CLI / hook>
+
+## Recommended Actions (ROI-ranked)
+1. <action> — est. reduction: N skills / N tokens / N pattern occurrences — effort: low/medium/high
+2. ...
+```
+
+## Implementation
+
+Apply user-approved changes. Skill → command conversions are delegated to `/audit-config-placement`. Plugin enable/disable edits go through `settings.json`. New agents go under `~/.claude/agents/` or the relevant plugin's `agents/` directory.
