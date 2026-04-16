@@ -65,9 +65,14 @@ inventory_recent_projects() {
 settings=$(read_settings)
 
 perms=$(jq '{
-  allow: ((.permissions.allow // []) | length),
-  deny:  ((.permissions.deny  // []) | length),
-  ask:   ((.permissions.ask   // []) | length)
+  allow: (.permissions.allow // []),
+  deny:  (.permissions.deny  // []),
+  ask:   (.permissions.ask   // []),
+  counts: {
+    allow: ((.permissions.allow // []) | length),
+    deny:  ((.permissions.deny  // []) | length),
+    ask:   ((.permissions.ask   // []) | length)
+  }
 }' <<<"$settings")
 
 hooks=$(jq '[
@@ -86,6 +91,19 @@ plugins=$(jq '{
   disabled: [ (.enabledPlugins // {}) | to_entries[] | select(.value == false) | .key ]
 }' <<<"$settings")
 
+mcp_servers=$(jq '[
+  (.mcpServers // {}) | to_entries[] | {
+    name: .key,
+    type: (.value.type // "stdio"),
+    command: (.value.command // null),
+    url: (.value.url // null),
+    args_count: ((.value.args // []) | length),
+    env_keys: [ (.value.env // {}) | keys[]? ]
+  }
+]' <<<"$settings")
+
+env_keys=$(jq '[ (.env // {}) | keys[]? ]' <<<"$settings")
+
 hook_scripts=$(inventory_hook_scripts)
 recent_projects=$(inventory_recent_projects)
 
@@ -94,6 +112,8 @@ jq -n \
   --argjson perms "$perms" \
   --argjson hooks "$hooks" \
   --argjson plugins "$plugins" \
+  --argjson mcp_servers "$mcp_servers" \
+  --argjson env_keys "$env_keys" \
   --argjson hook_scripts "$hook_scripts" \
   --argjson recent_projects "$recent_projects" \
   '{
@@ -101,7 +121,9 @@ jq -n \
       path: $settings_path,
       permissions: $perms,
       hooks: $hooks,
-      plugins: $plugins
+      plugins: $plugins,
+      mcp_servers: $mcp_servers,
+      env_keys: $env_keys
     },
     hook_scripts: $hook_scripts,
     recent_projects: $recent_projects

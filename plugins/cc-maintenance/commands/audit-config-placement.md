@@ -1,5 +1,6 @@
 ---
 description: Audit CLAUDE.md / rules / skills / commands / agents for responsibility alignment. Also lints skill definition quality.
+argument-hint: "[output language, e.g. ja / en]"
 ---
 
 # audit-config-placement
@@ -51,7 +52,14 @@ Reserved for ambiguous or high-impact cases. Ask the user before reading more.
 
 ## Output Language
 
-Detect from `~/.claude/CLAUDE.md` or conversation history. Keep this file in English.
+Resolve in this order and stop at the first hit:
+
+1. `$ARGUMENTS` — if the user passed a language (e.g. `ja`, `en`, `日本語`), use it verbatim.
+2. `~/.claude/CLAUDE.md` — infer from its written language.
+3. Conversation history — infer from the user's recent messages.
+4. Best guess from any other available signal (project files, commit messages, etc.). Never hard-fallback to English; pick the most probable language from what you have.
+
+Keep this command file itself in English regardless.
 
 ## Analysis
 

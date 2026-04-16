@@ -1,5 +1,7 @@
 # cc-maintenance
 
+[日本語 README](./README.ja.md)
+
 Audit and re-design your Claude Code environment. Three commands plus one subagent, each with a narrow responsibility and a metadata-first fetch strategy so audits stay cheap.
 
 ## Commands
@@ -8,7 +10,7 @@ These are commands (not skills) because auditing always happens with explicit us
 
 | Command | Responsibility |
 |---|---|
-| `/audit-settings` | `settings.json` / `settings.local.json`, permissions, hook implementation validity, plugin enable/disable. |
+| `/audit-settings` | `settings.json` / `settings.local.json`, permissions, hook implementation validity, MCP servers, plugin enable/disable, and a security lens across all of these (dangerous allows, hook injection, MCP trust, env secrets). |
 | `/audit-config-placement` | CLAUDE.md / rules / skills / commands / agents responsibility alignment. Type-change proposals (skill ⇄ command, rule → hook, skill → agent). Skill-definition quality lint. |
 | `/audit-context-cost` | Always-injected system prompt size, investigation noise in session logs, large outputs, subagent delegation design. |
 
@@ -56,4 +58,11 @@ The `bin/` scripts emit JSON to stdout. Commands reference them via `${CLAUDE_PL
 
 ## Output Language
 
-Each command detects the user's primary language from `~/.claude/CLAUDE.md` or conversation history and produces output in that language. Command definitions themselves are written in English.
+Each command resolves its output language in this order:
+
+1. Command argument (e.g. `/audit-settings ja`) — used verbatim.
+2. `~/.claude/CLAUDE.md` — inferred from its written language.
+3. Conversation history — inferred from your recent messages.
+4. Best guess from any other available signal. There is no hard English fallback.
+
+Command definitions themselves are always written in English.
