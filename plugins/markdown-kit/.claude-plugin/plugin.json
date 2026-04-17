@@ -1,0 +1,8 @@
+{
+  "name": "markdown-kit",
+  "description": "Markdown writing skills: GitHub alert syntax, emphasis style, and related documentation conventions",
+  "author": {
+    "name": "tasuku43"
+  },
+  "keywords": ["markdown", "documentation", "github", "alerts", "writing"]
+}

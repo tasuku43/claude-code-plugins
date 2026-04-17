@@ -8,6 +8,11 @@
       "name": "cc-maintenance",
       "source": "./plugins/cc-maintenance",
       "description": "Maintain and optimize Claude Code settings, context efficiency, and skill/command definitions"
+    },
+    {
+      "name": "markdown-kit",
+      "source": "./plugins/markdown-kit",
+      "description": "Markdown writing skills: GitHub alert syntax, emphasis style, and related documentation conventions"
     }
   ]
 }
