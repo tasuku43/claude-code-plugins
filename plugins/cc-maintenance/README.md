@@ -4,6 +4,22 @@
 
 Audit and re-design your Claude Code environment. Three commands plus one subagent, each with a narrow responsibility and a metadata-first fetch strategy so audits stay cheap.
 
+## Installation
+
+Add the marketplace once (if you haven't):
+
+```
+plugin marketplace add tasuku43/claude-code-plugins
+```
+
+Then install this plugin:
+
+```
+plugin install cc-maintenance@tasuku43-plugins
+```
+
+The `@tasuku43-plugins` suffix disambiguates against any plugin with the same name in other marketplaces.
+
 ## Commands
 
 These are commands (not skills) because auditing always happens with explicit user intent — there is no value in auto-triggering.

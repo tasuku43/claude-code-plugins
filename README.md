@@ -16,8 +16,4 @@ Add this marketplace in Claude Code:
 plugin marketplace add tasuku43/claude-code-plugins
 ```
 
-Then install a plugin:
-
-```
-plugin install cc-maintenance
-```
+Then see each plugin's README for its install command and usage.
